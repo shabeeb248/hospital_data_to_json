@@ -42,12 +42,20 @@ def main():
             href = f'<a href="data:application/json;base64,{b64}" download="{filename}">Download JSON file</a>'
             return href
         
+        def download_csv(data, filename):
+            json_data_to_csv = pd.read_json(data)
+            b64 = base64.b64encode(json_data_to_csv.to_csv().encode()).decode()
+            href = f'<a href="data:file/csv;base64,{b64}" download="{filename}">Download CSV file</a>'
+            return href
+
+
         for index,row in merged.iterrows():
             if type(row["RATE"]) == str:
                 st.write(row["RATE"])
         st.write(merged.iloc[120].to_json())
         st.write(merged.iloc[120])
         st.markdown(download_json(json_data, 'data.json'), unsafe_allow_html=True)
+        st.markdown(download_csv(json_data, 'data.csv'), unsafe_allow_html=True)
 
         
 

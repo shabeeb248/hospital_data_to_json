@@ -378,6 +378,31 @@ def validate_oncall(df):
 # %%
 def validate_roles(df):
     valid_roles = ['CMO Senior', 'REGISTRAR', 'RMO', 'SRMO', 'CMO NON IC', 'REGISTRAR IC']
+    ic_values = [
+    "CMO IC",
+    "CMO IC / GP VMO",
+    "CMO IC / VMO",
+    "CMO IC OR GP VMO",
+    "GP VMO OR CMO IC",
+    "GP VMO/ CMO IC",
+    "REG IC",
+    "REGISTRAR IC",
+    "VMO/CMO IC",
+    "VMO/HMO/CMO IC"
+]
+    non_ic_values = [
+        "CMO NON IC",
+        "MANNING IPU",
+        "MATER MENTAL HEALTH",
+        "REG",
+        "REG - ATY1+",
+        "REG - BTY2+",
+        "REG -ATY1+",
+        "REG -BTY2+",
+        "REG OR CMO",
+        "REGISTRAR"
+    ]
+
     indices = []
     # Iterate through each row in the dataframe
     for index, row in df.iterrows():
@@ -393,7 +418,9 @@ def validate_roles(df):
             df.at[index, "GRADE"] = "Other"
             
         try:
-            if "IC" in role_value:
+            if role_value in non_ic_values:
+                df.at[index, "SENIORITY"] = "NON IC"
+            elif role_value in ic_values :
                 df.at[index, "SENIORITY"] = "IC"
             else:
                 df.at[index, "SENIORITY"] = "NON IC"
