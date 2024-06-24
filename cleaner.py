@@ -420,7 +420,8 @@ def validate_roles(df):
         "REG IC",
         "REGISTRAR IC",
         "VMO/CMO IC",
-        "VMO/HMO/CMO IC"
+        "VMO/HMO/CMO IC",
+        "CMO or VMO"
         ]
     non_ic_values = [
         "CMO NON IC",
