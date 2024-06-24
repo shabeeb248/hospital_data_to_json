@@ -150,6 +150,36 @@ def validate_date_final(df):
     
     return df, indices
 
+def formatShiftValueTo15mininterval(shift):
+    def round_to_nearest_15(minutes):
+        return (minutes + 7) // 15 * 15
+    
+    def format_time(hour, minute):
+        return f"{hour:02d}{minute:02d}"
+    
+    start_time, end_time = shift.split('-')
+    start_hour, start_minute = int(start_time[:2]), int(start_time[2:])
+    end_hour, end_minute = int(end_time[:2]), int(end_time[2:])
+    
+    # Round start and end times to nearest 15 minutes
+    start_minute_rounded = round_to_nearest_15(start_minute)
+    end_minute_rounded = round_to_nearest_15(end_minute)
+    
+    # Adjust hours if rounding minutes leads to overflow
+    if start_minute_rounded == 60:
+        start_hour += 1
+        start_minute_rounded = 0
+    if end_minute_rounded == 60:
+        end_hour += 1
+        end_minute_rounded = 0
+    
+    # Format hours and minutes correctly
+    start_time_formatted = format_time(start_hour, start_minute_rounded)
+    end_time_formatted = format_time(end_hour % 24, end_minute_rounded)
+    
+    return f"{start_time_formatted}-{end_time_formatted}"
+    
+
 # %%
 def validate_shift(df):
     # Iterate through each row in the dataframe
@@ -165,6 +195,7 @@ def validate_shift(df):
         shift_value = shift_value.replace(" ","")
         if len(shift_value)==8:
             shift_value = "0"+shift_value
+        shift_value = formatShiftValueTo15mininterval(shift_value)
         df.at[index, 'SHIFT'] = shift_value
         # Clean the shift value and split it into start and end times
         try:
@@ -378,18 +409,19 @@ def validate_oncall(df):
 # %%
 def validate_roles(df):
     valid_roles = ['CMO Senior', 'REGISTRAR', 'RMO', 'SRMO', 'CMO NON IC', 'REGISTRAR IC']
+    
     ic_values = [
-    "CMO IC",
-    "CMO IC / GP VMO",
-    "CMO IC / VMO",
-    "CMO IC OR GP VMO",
-    "GP VMO OR CMO IC",
-    "GP VMO/ CMO IC",
-    "REG IC",
-    "REGISTRAR IC",
-    "VMO/CMO IC",
-    "VMO/HMO/CMO IC"
-]
+        "CMO IC",
+        "CMO IC / GP VMO",
+        "CMO IC / VMO",
+        "CMO IC OR GP VMO",
+        "GP VMO OR CMO IC",
+        "GP VMO/ CMO IC",
+        "REG IC",
+        "REGISTRAR IC",
+        "VMO/CMO IC",
+        "VMO/HMO/CMO IC"
+        ]
     non_ic_values = [
         "CMO NON IC",
         "MANNING IPU",
@@ -407,6 +439,7 @@ def validate_roles(df):
     # Iterate through each row in the dataframe
     for index, row in df.iterrows():
         role_value = row['ROLE']
+        position_value = row['UNIT']
         
         if "cmo" in role_value.lower() or "reg" in role_value.lower():
             df.at[index, "GRADE"] = "Registrar"
@@ -418,12 +451,15 @@ def validate_roles(df):
             df.at[index, "GRADE"] = "Other"
             
         try:
-            if role_value in non_ic_values:
-                df.at[index, "SENIORITY"] = "NON IC"
-            elif role_value in ic_values :
-                df.at[index, "SENIORITY"] = "IC"
+            if position_value=='Emergency Medicine':
+                if role_value in non_ic_values:
+                    df.at[index, "SENIORITY"] = "NON IC"
+                elif role_value in ic_values :
+                    df.at[index, "SENIORITY"] = "IC"
+                else:
+                    df.at[index, "SENIORITY"] = "NON IC"
             else:
-                df.at[index, "SENIORITY"] = "NON IC"
+                df.at[index, "SENIORITY"] = ""
         # Check if role value is in the predefined list of valid roles
             if role_value.strip().upper() not in valid_roles:
                 # If role value is not in the predefined list, set roles-validate to False for this row
@@ -452,7 +488,7 @@ def validate_units(df):
     
     return df, indices
 
-validations = [validate_date, validate_hours, validate_rate, validate_cost, validate_hours, validate_roles, validate_oncall, validate_units, validate_shift, validate_date_final]
+validations = [validate_date, validate_hours, validate_rate, validate_cost, validate_hours, validate_units, validate_roles, validate_oncall, validate_shift, validate_date_final]
 
 def validate_all(dfdict):
     validated = dfdict
