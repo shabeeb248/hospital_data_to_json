@@ -330,9 +330,12 @@ def validate_rate(df):
                 rate_value = extract_first_number_between_dollar_and_non_digit(rate_value)
                 rate_value = remove_non_digits_and_period(rate_value)
                 rate_value = float(rate_value)
-                cost_value = rate_value
-            # Check if rate equals cost and hours is not equal to 1
-            if type(rate_value)==str:                        # If rate equals cost but hours is not 1, set rate-validate to False for this row
+                #cost_value = rate_value
+                cost_value = cost_value.replace(" ","")
+                cost_value = extract_first_number_between_dollar_and_non_digit(cost_value)
+                cost_value = remove_non_digits_and_period(cost_value)
+                cost_value = float(cost_value)
+            # Check if rate equals cost and hours is not equal to 1                     # If rate equals cost but hours is not 1, set rate-validate to False for this row
         # If rate equals cost but hours is not 1, set rate-validate to False for this row
                 # If rate equals cost but hours is not 1, set rate-validate to False for this row
                 indices.append(index)
@@ -342,8 +345,8 @@ def validate_rate(df):
                 number_regex = r'\d+\.\d+|\d+'
                 # Find all matches of the regex in the input string
                 
-                df.at[index, "COST"] = cost_value
-                df.at[index, "RATE"] = round(df.at[index, "COST"] / df.at[index, "HOURS"],2)
+                df.at[index, "COST"] = round(df.at[index, "RATE"] * df.at[index, "HOURS"],2)
+                df.at[index, "RATE"] = rate_value
                 try:
                     df.at[index, "COST"] = re.findall(number_regex, df.at[index, "COST"])[0]
                 except:
@@ -398,6 +401,10 @@ def validate_oncall(df):
                 # If cost value is not 'yes' or 'no', set cost-validate to False for this row
                 df.at[index, 'ON CALL-VALIDATE'] = False
                 indices.append(index)
+            elif df.at[index, 'ROLE'].lower().strip() in ['yes','no']:
+                k = df.at[index, 'ROLE']
+                df.at[index, 'ROLE'] = row['ON CALL']
+                df.at[index, 'CALL'] = k
             else:
                 # Otherwise, set cost-validate to True for this row
                 df.at[index, 'ON CALL-VALIDATE'] = True
@@ -459,7 +466,7 @@ def validate_roles(df):
                 elif role_value in ic_values :
                     df.at[index, "SENIORITY"] = "IC"
                 else:
-                    df.at[index, "SENIORITY"] = "NON IC"
+                    df.at[index, "SENIORITY"] = "IC"
             else:
                 df.at[index, "SENIORITY"] = ""
         # Check if role value is in the predefined list of valid roles
